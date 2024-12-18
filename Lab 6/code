@@ -1,0 +1,84 @@
+import numpy as np
+import random
+from multiprocessing import Pool
+
+# Step 1: Initialize the traffic grid
+def initialize_grid(rows, cols):
+    """Create a grid with given rows and columns initialized to zero."""
+    return np.zeros((rows, cols), dtype=int)
+
+# Step 2: Assign random traffic densities
+def assign_random_traffic(grid):
+    """Randomly assign traffic densities (values between 1 to 10)."""
+    rows, cols = grid.shape
+    for i in range(rows):
+        for j in range(cols):
+            grid[i][j] = random.randint(1, 10)
+    return grid
+
+# Step 3: Define the fitness function
+def fitness_function(grid):
+    """Calculate fitness as the total congestion (sum of traffic densities)."""
+    return np.sum(grid)
+
+# Step 4: Update grid based on traffic density
+def update_cell(cell_value):
+    """Update a single grid cell's value based on some traffic rules."""
+    if cell_value > 8:  # Simulating high congestion reduction
+        return cell_value - 2
+    elif cell_value < 3:  # Simulating increased density for low values
+        return cell_value + 1
+    return cell_value  # No change for moderate traffic
+
+def update_grid_parallel(grid):
+    """Update the grid in parallel."""
+    rows, cols = grid.shape
+    flat_grid = grid.flatten()
+    with Pool() as pool:
+        updated_flat_grid = pool.map(update_cell, flat_grid)
+    return np.array(updated_flat_grid).reshape(rows, cols)
+
+# Step 5: Main Traffic Flow Optimization Algorithm
+def traffic_flow_optimization(rows, cols, iterations):
+    """
+    Perform traffic flow optimization for a given grid size and iterations.
+    """
+    # Step 1: Initialize grid
+    grid = initialize_grid(rows, cols)
+    best_grid = None
+    best_fitness = float('inf')
+
+    # Step 2: Assign random traffic densities
+    grid = assign_random_traffic(grid)
+
+    # Step 3 and 4: Iterate and optimize
+    for iteration in range(iterations):
+        print(f"\nIteration {iteration + 1}:")
+
+        # Evaluate current fitness
+        current_fitness = fitness_function(grid)
+        print(f"Current Fitness: {current_fitness}")
+        
+        # Track the best configuration
+        if current_fitness < best_fitness:
+            best_fitness = current_fitness
+            best_grid = grid.copy()
+            print("Best grid updated!")
+
+        # Update grid in parallel
+        grid = update_grid_parallel(grid)
+        print("Grid updated.")
+
+    # Step 6: Output the best grid and fitness value
+    print("\nOptimization Complete!")
+    print(f"Best Fitness Value: {best_fitness}")
+    print("Best Grid Configuration:")
+    print(best_grid)
+
+# Step 6: Run the algorithm
+if __name__ == "__main__":
+    rows = 5  # Number of rows in grid
+    cols = 5  # Number of columns in grid
+    iterations = 10  # Number of iterations to perform
+
+    traffic_flow_optimization(rows, cols, iterations)
