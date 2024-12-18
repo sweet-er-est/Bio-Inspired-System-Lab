@@ -1,0 +1,83 @@
+import random
+
+# Define the problem
+NUM_PROJECTS = 5  # Number of tasks/projects
+RESOURCES = 100   # Total resources (e.g., budget or hours)
+POPULATION_SIZE = 20
+MUTATION_RATE = 0.1
+GENERATIONS = 50
+
+# Fitness function: Profit is proportional to the resources allocated
+def fitness_function(allocation, profits):
+    total_profit = sum(allocation[i] * profits[i] for i in range(NUM_PROJECTS))
+    return total_profit
+
+# Generate an initial random chromosome (resource allocation)
+def generate_chromosome():
+    allocation = [random.randint(0, RESOURCES) for _ in range(NUM_PROJECTS)]
+    total = sum(allocation)
+    # Normalize to ensure total resources = RESOURCES
+    return [int((res / total) * RESOURCES) for res in allocation]
+
+# Initialize population
+def initialize_population():
+    return [generate_chromosome() for _ in range(POPULATION_SIZE)]
+
+# Selection: Select the top 50% of the population based on fitness
+def selection(population, profits):
+    population = sorted(population, key=lambda x: fitness_function(x, profits), reverse=True)
+    return population[:POPULATION_SIZE // 2]
+
+# Crossover: Combine two parents to create a child
+def crossover(parent1, parent2):
+    point = random.randint(1, NUM_PROJECTS - 1)
+    child = parent1[:point] + parent2[point:]
+    # Normalize to meet resource constraint
+    total = sum(child)
+    return [int((res / total) * RESOURCES) for res in child]
+
+# Mutation: Randomly adjust a resource allocation
+def mutate(chromosome):
+    if random.random() < MUTATION_RATE:
+        index = random.randint(0, NUM_PROJECTS - 1)
+        change = random.randint(-5, 5)
+        chromosome[index] = max(0, chromosome[index] + change)
+    total = sum(chromosome)
+    return [int((res / total) * RESOURCES) for res in chromosome]
+
+# Main GEA algorithm
+def gene_expression_algorithm():
+    # Random profit coefficients for projects
+    profits = [random.randint(1, 10) for _ in range(NUM_PROJECTS)]
+    print("Profit per resource for each project:", profits)
+
+    # Step 1: Initialize population
+    population = initialize_population()
+
+    # Step 2: Iterate for generations
+    for generation in range(GENERATIONS):
+        # Evaluate and select
+        selected = selection(population, profits)
+        
+        # Create next generation
+        new_population = selected.copy()
+        while len(new_population) < POPULATION_SIZE:
+            parent1, parent2 = random.choice(selected), random.choice(selected)
+            child = crossover(parent1, parent2)
+            child = mutate(child)
+            new_population.append(child)
+        
+        population = new_population
+
+        # Print the best solution in this generation
+        best_solution = max(population, key=lambda x: fitness_function(x, profits))
+        print(f"Generation {generation + 1}, Best Profit: {fitness_function(best_solution, profits)}")
+
+    # Output the best solution
+    best_solution = max(population, key=lambda x: fitness_function(x, profits))
+    print("\nBest Resource Allocation:", best_solution)
+    print("Maximum Profit Achieved:", fitness_function(best_solution, profits))
+
+# Run the algorithm
+if __name__ == "__main__":
+    gene_expression_algorithm()
